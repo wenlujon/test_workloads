@@ -13,20 +13,27 @@ warmup_time=60
 run_time=300
 #run_time=120
 
+if [ "$2" == "ins" ]; then
+	tables=64
+	tsize=40000
+else
+	tables=100
+	tsize=400000
+fi
 
 for nthread in 256
 do
         echo "${time} $mode Testing Ali config on mysql-8.0.25: nthread ${nthread}"
 
-        $affinity sysbench $mode --db-ps-mode=auto --mysql-host=$SERVERIP --mysql-port=$PORT --mysql-user=sysbench --mysql-password=password --mysql-db=sysdb --tables=100 --table_size=400000 --time=300 --report-interval=1 --threads=64 cleanup
+        $affinity sysbench $mode --db-ps-mode=auto --mysql-host=$SERVERIP --mysql-port=$PORT --mysql-user=sysbench --mysql-password=password --mysql-db=sysdb --tables=$tables --table_size=$tsize --time=300 --report-interval=1 --threads=64 cleanup
         echo "===> finish cleanup"
         sleep 1
 
-        $affinity sysbench $mode --db-ps-mode=auto --mysql-host=$SERVERIP --mysql-port=$PORT --mysql-user=sysbench --mysql-password=password --mysql-db=sysdb --tables=100 --table_size=400000 --time=300 --report-interval=1 --threads=64 prepare
+        $affinity sysbench $mode --db-ps-mode=auto --mysql-host=$SERVERIP --mysql-port=$PORT --mysql-user=sysbench --mysql-password=password --mysql-db=sysdb --tables=$tables --table_size=$tsize --time=300 --report-interval=1 --threads=64 prepare
         echo "===> finish prepare"
         sleep 1
 
-        $affinity sysbench $mode --db-ps-mode=auto --mysql-host=$SERVERIP --mysql-port=$PORT --mysql-user=sysbench --mysql-password=password --mysql-db=sysdb --tables=100 --table_size=400000 --warmup-time=${warmup_time} --time=${run_time} --report-interval=10 --threads=${nthread} run
+        $affinity sysbench $mode --db-ps-mode=auto --mysql-host=$SERVERIP --mysql-port=$PORT --mysql-user=sysbench --mysql-password=password --mysql-db=sysdb --tables=$tables --table_size=$tsize --warmup-time=${warmup_time} --time=${run_time} --report-interval=10 --threads=${nthread} run
 
         echo "===> finish run"
         sleep 1
