@@ -1,13 +1,13 @@
 diff --git a/src/Makefile b/src/Makefile
-index 3a09ccd..c723f5c 100644
+index 3a09ccd..a8a3f40 100644
 --- a/src/Makefile
 +++ b/src/Makefile
 @@ -73,6 +73,9 @@ endif
  # Override default settings if possible
  -include .make-settings
  
-++CFLAGS+= -fno-reorder-blocks-and-partition
-++LDFLAGS+= -Wl,--emit-relocs
++CFLAGS+= -fno-reorder-blocks-and-partition
++LDFLAGS+= -Wl,--emit-relocs
 +
  FINAL_CFLAGS=$(STD) $(WARN) $(OPT) $(DEBUG) $(CFLAGS) $(REDIS_CFLAGS)
  FINAL_LDFLAGS=$(LDFLAGS) $(REDIS_LDFLAGS) $(DEBUG)

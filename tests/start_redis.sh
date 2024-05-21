@@ -7,6 +7,7 @@ cd ..
 WORKSPACE=`pwd`
 popd
 
+source $WORKSPACE/scripts/lib.sh
 
-
-$WORKSPACE/redis/src/redis-server $WORKSPACE/redis/redis.conf
+install_package numactl
+numactl -C 0 $WORKSPACE/redis/src/redis-server $WORKSPACE/redis/redis.conf
