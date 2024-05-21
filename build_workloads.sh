@@ -81,10 +81,44 @@ build_bolt() {
         ninja bolt || die "failed to build bolt"
 
 }
+
+build_redis() {
+	if [ ! -d redis ]; then
+		git clone --recursive --depth 1 --branch 6.0.9 https://github.com/redis/redis.git || die "failed to clone redis"
+		cd redis
+		patch -p1 < $WORKSPACE/patches/redis.patch || die "failed to patch redis"
+	else
+		cd redis
+	fi
+	make -j $(nproc) || die "failed to build redis"
+
+	sed -i "s/^port 6379/port 9400/" redis.conf
+	sed -i 's/^bind 127.*$/bind 0\.0\.0\.0 ::1/' redis.conf
+	sed -i "s/^daemonize no/daemonize yes/" redis.conf
+	sed -i "s/^# maxclients 10000/maxclients 10000/" redis.conf
+	echo 'save ""' >> redis.conf
+}
+
+build_memtier() {
+	for package in build-essential autoconf automake libpcre3-dev libevent-dev pkg-config zlib1g-dev libssl-dev git; do
+		install_package $package
+	done
+	if [ ! -d memtier_benchmark ]; then
+		git clone https://github.com/RedisLabs/memtier_benchmark.git || die "failed to clone memtier"
+	fi
+	cd memtier_benchmark
+	autoreconf -ivf || die "failed to autoreconf memtier"
+	./configure || die "failed to configure memtier"
+	make -j $(nproc) || die "failed to build memtier"
+	sudo make install || die "failed to install memtier"
+}
+
 build_all() {
         build_mysql
         build_sysbench
         build_bolt
+	build_redis
+	build_memtier
 }
 
 
@@ -100,6 +134,12 @@ case "$1" in
     ;;
   "bolt")
     build_bolt
+    ;;
+  "redis")
+    build_redis
+    ;;
+  "memtier")
+    build_memtier
     ;;
   "")
     build_all
