@@ -7,6 +7,8 @@ if [ ! -d $WORKSPACE/install ]; then
         mkdir $WORKSPACE/install
 fi
 
+ARCH=`lscpu | grep Architecture | awk '{print $2}'`
+
 MYSQL_INSTALL_DIR=$WORKSPACE/install/mysql_install_8.0.33
 build_mysql() {
         for package in git cmake g++ openssl libssl-dev libncurses5-dev libtirpc-dev rpcsvc-proto bison pkg-config; do
@@ -30,10 +32,20 @@ build_mysql() {
 
         cd build
 
-        cmake -DCMAKE_C_FLAGS="-g -O3 -mcpu=native -fno-reorder-blocks-and-partition -Wl,--emit-relocs" \
-                -DCMAKE_CXX_FLAGS="-g -O3 -mcpu=native -fno-reorder-blocks-and-partition -Wl,--emit-relocs" \
-                -DCMAKE_INSTALL_PREFIX=$WORKSPACE/install/mysql_install_8.0.33 \
-                -DWITH_BOOST=$WORKSPACE/boost_1_77_0/ .. || die "failed to cmake"
+	if [ "$ARCH" == "aarch64" ]; then
+
+		cmake -DCMAKE_C_FLAGS="-g -O3 -mcpu=native -fno-reorder-blocks-and-partition -Wl,--emit-relocs" \
+			-DCMAKE_CXX_FLAGS="-g -O3 -mcpu=native -fno-reorder-blocks-and-partition -Wl,--emit-relocs" \
+			-DCMAKE_INSTALL_PREFIX=$WORKSPACE/install/mysql_install_8.0.33 \
+			-DWITH_BOOST=$WORKSPACE/boost_1_77_0/ .. || die "failed to cmake"
+	elif [ "$ARCH" == "x86_64" ]; then
+		cmake -DCMAKE_C_FLAGS="-g -O3 -march=native -fno-reorder-blocks-and-partition -Wl,--emit-relocs" \
+			-DCMAKE_CXX_FLAGS="-g -O3 -march=native -fno-reorder-blocks-and-partition -Wl,--emit-relocs" \
+			-DCMAKE_INSTALL_PREFIX=$WORKSPACE/install/mysql_install_8.0.33 \
+			-DWITH_BOOST=$WORKSPACE/boost_1_77_0/ .. || die "failed to cmake"
+	else
+		die "unsupported arch $ARCH"
+	fi
 
         make -j $(nproc) || die "failed to make"
 
