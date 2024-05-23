@@ -113,17 +113,34 @@ build_memtier() {
 	sudo make install || die "failed to install memtier"
 }
 
+build_memcached() {
+	for package in autotools-dev automake libevent-dev; do
+		install_package $package
+	done
+	module="memcached"
+	if [ ! -d memcached ]; then
+		git clone https://github.com/memcached/memcached.git || die "failed to clone $module"
+		cd memcached
+		./autogen.sh || die "failed to autogen $module"
+		./configure || die "failed to configure $module"
+		patch -p0 < $WORKSPACE/patches/memcached.patch || die "failed to patch $module"
+	else
+		cd memcached
+	fi
+
+	make -j $(nproc) || die "failed to make $module"
+}
+
 build_all() {
         build_mysql
         build_sysbench
         build_bolt
 	build_redis
 	build_memtier
+	build_memcached
 }
 
-
 SECONDS=0
-
 
 case "$1" in
   "mysql")
@@ -140,6 +157,9 @@ case "$1" in
     ;;
   "memtier")
     build_memtier
+    ;;
+  "memcached")
+    build_memcached
     ;;
   "")
     build_all
