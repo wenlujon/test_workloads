@@ -1,0 +1,11 @@
+--- objs/Makefile.orig	2024-05-23 17:10:26.243404949 +0800
++++ objs/Makefile	2024-05-23 17:11:23.498254050 +0800
+@@ -2,7 +2,7 @@
+ CC =	cc
+ CFLAGS = -fno-reorder-blocks-and-partition 
+ CPP =	
+-LINK =	$(CC)
++LINK =	$(CC) -Wl,--emit-relocs
+ 
+ 
+ ALL_INCS = -I src/core \

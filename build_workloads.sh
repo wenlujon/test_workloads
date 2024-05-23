@@ -143,6 +143,25 @@ build_memcached() {
 	make -j $(nproc) || die "failed to make $module"
 }
 
+build_nginx() {
+	if [ ! -d nginx ]; then
+		pushd /tmp
+		apt source nginx
+		mv nginx-* $WORKSPACE/nginx
+		popd
+		cd nginx
+		CFLAGS="-fno-reorder-blocks-and-partition" \
+			CXXFLAGS="-fno-reorder-blocks-and-partition" \
+			./configure --without-http_rewrite_module --prefix=$WORKSPACE/install/nginx || die "failed to configure nginx"
+		patch -p0 < $WORKSPACE/patches/nginx.patch || die "failed to patch nginx"
+	else
+		cd nginx
+	fi
+
+	make -j $(nproc) || die "failed to make nginx"
+	make -j $(nproc) install || die "failed to make nginx"
+}
+
 build_all() {
         build_mysql
         build_sysbench
@@ -150,6 +169,7 @@ build_all() {
 	build_redis
 	build_memtier
 	build_memcached
+	build_nginx
 }
 
 SECONDS=0
@@ -172,6 +192,9 @@ case "$1" in
     ;;
   "memcached")
     build_memcached
+    ;;
+  "nginx")
+    build_nginx
     ;;
   "")
     build_all
