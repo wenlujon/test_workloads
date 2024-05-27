@@ -162,6 +162,26 @@ build_nginx() {
 	make -j $(nproc) install || die "failed to make nginx"
 }
 
+build_mongo() {
+	for package in libcurl4-openssl-dev python3 python-is-python3; do
+		install_package $package
+	done
+	if [ ! -d mongo ]; then
+		git clone https://github.com/mongodb/mongo.git || die "failed to clone mongo"
+		cd mongo
+		git checkout r4.4.4
+		python -m pip install -r etc/pip/compile-requirements.txt || die "failed to install requirements for mongo"
+		patch -p1 < $WORKSPACE/patches/mongo.patch || die "failed to patch mongo"
+	else
+		cd mongo
+	fi
+
+	python3 buildscripts/scons.py DESTDIR=$WORKSPACE/install/mongo install-mongod \
+		CCFLAGS="-fno-reorder-blocks-and-partition -mcpu=native -O3 -w" \
+		LINKFLAGS="-Wl,--emit-relocs" \
+		--disable-warnings-as-errors || die "failed to build mongo"
+}
+
 build_all() {
         build_mysql
         build_sysbench
@@ -170,6 +190,7 @@ build_all() {
 	build_memtier
 	build_memcached
 	build_nginx
+	build_mongo
 }
 
 SECONDS=0
@@ -195,6 +216,9 @@ case "$1" in
     ;;
   "nginx")
     build_nginx
+    ;;
+  "mongo")
+    build_mongo
     ;;
   "")
     build_all

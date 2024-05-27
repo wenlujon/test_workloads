@@ -1,0 +1,54 @@
+diff --git a/src/mongo/db/exec/plan_stats.h b/src/mongo/db/exec/plan_stats.h
+index ea75f673b81..a1d9f78e899 100644
+--- a/src/mongo/db/exec/plan_stats.h
++++ b/src/mongo/db/exec/plan_stats.h
+@@ -33,6 +33,7 @@
+ #include <cstdlib>
+ #include <string>
+ #include <vector>
++#include <optional>
+ 
+ #include "mongo/db/index/multikey_paths.h"
+ #include "mongo/db/jsobj.h"
+diff --git a/src/mongo/stdx/thread.h b/src/mongo/stdx/thread.h
+index f8058279e34..7d7455ab09d 100644
+--- a/src/mongo/stdx/thread.h
++++ b/src/mongo/stdx/thread.h
+@@ -79,7 +79,7 @@ private:
+         stack_t ss = {};
+         ss.ss_sp = _stackStorage.get();
+         ss.ss_flags = 0;
+-        ss.ss_size = kStackSize;
++        ss.ss_size = getStackSize();
+         if (sigaltstack(&ss, nullptr)) {
+             abort();
+         }
+@@ -106,9 +106,8 @@ private:
+     //   ( https://jira.mongodb.org/secure/attachment/233569/233569_stacktrace-writeup.txt )
+     static constexpr std::size_t kMongoMinSignalStackSize = std::size_t{64} << 10;
+ 
+-    static constexpr std::size_t kStackSize =
+-        std::max(kMongoMinSignalStackSize, std::size_t{MINSIGSTKSZ});
+-    std::unique_ptr<std::byte[]> _stackStorage = std::make_unique<std::byte[]>(kStackSize);
++    static std::size_t getStackSize() { return std::max(kMongoMinSignalStackSize, std::size_t{MINSIGSTKSZ}); }
++    std::unique_ptr<std::byte[]> _stackStorage = std::make_unique<std::byte[]>(getStackSize());
+ 
+ #else   // !MONGO_HAS_SIGALTSTACK
+     auto makeInstallGuard() const {
+diff --git a/src/third_party/boost-1.70.0/boost/thread/pthread/thread_data.hpp b/src/third_party/boost-1.70.0/boost/thread/pthread/thread_data.hpp
+index 588e997f894..f0e5f7dcea0 100644
+--- a/src/third_party/boost-1.70.0/boost/thread/pthread/thread_data.hpp
++++ b/src/third_party/boost-1.70.0/boost/thread/pthread/thread_data.hpp
+@@ -57,9 +57,9 @@ namespace boost
+ #else
+           std::size_t page_size = ::sysconf( _SC_PAGESIZE);
+ #endif
+-#if PTHREAD_STACK_MIN > 0
+-          if (size<PTHREAD_STACK_MIN) size=PTHREAD_STACK_MIN;
+-#endif
++	  if (PTHREAD_STACK_MIN > 0) {
++	    if (size<PTHREAD_STACK_MIN) size=PTHREAD_STACK_MIN;
++	  }
+           size = ((size+page_size-1)/page_size)*page_size;
+           int res = pthread_attr_setstacksize(&val_, size);
+           BOOST_VERIFY(!res && "pthread_attr_setstacksize failed");
