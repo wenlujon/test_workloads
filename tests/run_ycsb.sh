@@ -16,5 +16,15 @@ if [ ! -d ycsb-0.17.0 ]; then
 fi
 
 cd $WORKSPACE/ycsb-0.17.0
-./bin/ycsb.sh run mongodb -s -P workloads/workloada -p operationcount=5000000 -threads 64 -p mongodb.url="mongodb://$1:27017/ali" | tee workloada.txt
+if [ "$2" == "ins" ]; then
+	OP_CNT=5000000
 
+	./bin/ycsb.sh load mongodb -s -P workloads/workloada -p operationcount=$OP_CNT -threads 64 -p mongodb.url="mongodb://$1:27017/ali" | tee workloada.txt
+	./bin/ycsb.sh run mongodb -s -P workloads/workloada  -p operationcount=$OP_CNT -threads 64 -p mongodb.url="mongodb://$1:27017/ali" | tee workloada.txt
+else
+	REC_CNT=6000000
+	OP_CNT=5000000
+
+	./bin/ycsb.sh load mongodb -s -P workloads/workloada -p recordcount=$REC_CNT -p operationcount=$OP_CNT -threads 64 -p mongodb.url="mongodb://$1:27017/ali" | tee workloada.txt
+	./bin/ycsb.sh run mongodb -s -P workloads/workloada -p recordcount=$REC_CNT -p operationcount=$OP_CNT -threads 64 -p mongodb.url="mongodb://$1:27017/ali" | tee workloada.txt
+fi
