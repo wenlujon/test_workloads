@@ -169,9 +169,9 @@ build_mongo() {
 	if [ ! -d mongo ]; then
 		git clone https://github.com/mongodb/mongo.git || die "failed to clone mongo"
 		cd mongo
-		git checkout r4.4.4
+		git checkout r7.0.5
 		python -m pip install -r etc/pip/compile-requirements.txt || die "failed to install requirements for mongo"
-		patch -p1 < $WORKSPACE/patches/mongo.patch || die "failed to patch mongo"
+		#patch -p1 < $WORKSPACE/patches/mongo.patch || die "failed to patch mongo"
 	else
 		cd mongo
 	fi
@@ -180,6 +180,37 @@ build_mongo() {
 		CCFLAGS="-fno-reorder-blocks-and-partition -mcpu=native -O3 -w" \
 		LINKFLAGS="-Wl,--emit-relocs" \
 		--disable-warnings-as-errors || die "failed to build mongo"
+}
+
+build_gcc() {
+	install_package flex
+
+	if [ ! -d gcc-11.4.0 ]; then
+		wget https://ftp.gwdg.de/pub/misc/gcc/releases/gcc-11.4.0/gcc-11.4.0.tar.gz && tar -xzvf gcc-11.4.0.tar.gz
+		cd gcc-11.4.0
+		./contrib/download_prerequisites
+		mkdir build
+		cd build
+		../configure -v --build=aarch64-linux-gnu \
+			--host=aarch64-linux-gnu \
+			--target=aarch64-linux-gnu \
+			--enable-checking=release \
+			--enable-languages=c,c++ \
+			--disable-multilib || die "failed to configure gcc, stage 1"
+
+		../configure --prefix=$WORKSPACE/install/gcc-11 \
+			--disable-multilib \
+			--program-suffix=-11 \
+			--program-prefix=aarch64-linux-gnu-  \
+			--enable-languages=c,c++ \
+			--with-gcc-major-version-only \
+			--enable-checking=release || die "failed to configure gcc, stage 2"
+	else
+		cd gcc-11.4.0
+	fi
+
+	make -j $(nproc) || die "failed to make gcc"
+	make -j $(nproc) install || die "failed to install gcc"
 }
 
 build_all() {
@@ -191,6 +222,7 @@ build_all() {
 	build_memcached
 	build_nginx
 	build_mongo
+	build_gcc
 }
 
 SECONDS=0
@@ -219,6 +251,9 @@ case "$1" in
     ;;
   "mongo")
     build_mongo
+    ;;
+  "gcc")
+    build_gcc
     ;;
   "")
     build_all
