@@ -22,7 +22,7 @@ if [ "$2" == "ins" ]; then
 	./bin/ycsb.sh load mongodb -s -P workloads/workloada -p operationcount=$OP_CNT -threads 64 -p mongodb.url="mongodb://$1:27017/ali" | tee workloada.txt
 	./bin/ycsb.sh run mongodb -s -P workloads/workloada  -p operationcount=$OP_CNT -threads 64 -p mongodb.url="mongodb://$1:27017/ali" | tee workloada.txt
 else
-	REC_CNT=6000000
+	REC_CNT=40000000
 	OP_CNT=5000000
 
 	./bin/ycsb.sh load mongodb -s -P workloads/workloada -p recordcount=$REC_CNT -p operationcount=$OP_CNT -threads 64 -p mongodb.url="mongodb://$1:27017/ali" | tee workloada.txt
