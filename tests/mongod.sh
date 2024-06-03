@@ -9,7 +9,7 @@ popd
 source $WORKSPACE/scripts/lib.sh
 
 CONFIG=$WORKSPACE/config/mongod.conf
-DATADIR=/data3
+DATADIR=$WORKSPACE
 
 if [ "$1" == "start" ]; then
 	pid=`pidof mongod`
