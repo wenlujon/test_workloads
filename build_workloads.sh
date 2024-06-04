@@ -213,6 +213,28 @@ build_gcc() {
 	make -j $(nproc) install || die "failed to install gcc"
 }
 
+
+build_fdo() {
+	for package in cmake ninja-build protobuf-compiler libprotobuf-dev libunwind-dev libgflags-dev libssl-dev libelf-dev; do
+		install_package $package
+	done
+
+	if [ ! -d autofdo ]; then
+		git clone --recursive https://github.com/google/autofdo.git || die "failed to pull autofdo"
+		cd autofdo
+		mkdir build
+		cd build
+		cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=. ../ || die "failed to cmake autofdo"
+
+	else
+		cd autofdo/build
+	fi
+
+	ninja || die "failed to build autofdo"
+
+	cd ../..
+}
+
 build_all() {
         build_mysql
         build_sysbench
@@ -223,6 +245,7 @@ build_all() {
 	build_nginx
 	build_mongo
 	build_gcc
+	build_fdo
 }
 
 SECONDS=0
@@ -254,6 +277,9 @@ case "$1" in
     ;;
   "gcc")
     build_gcc
+    ;;
+  "fdo")
+    build_fdo
     ;;
   "")
     build_all
